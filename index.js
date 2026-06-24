@@ -1,6 +1,4 @@
-//const http = require('http');
 const express = require('express');
-const mysql = require('mysq12/promise');
 
 class TokenBucket {
     constructor(requestsPerSecond = 10, burstSize = 20){
@@ -40,32 +38,10 @@ const getBucket = (key, config = {}) => {
     return buckets.get(key);
 };
 
-// ─── HTTP Server ──────────────────────────────────────────────────────────────
-// http.createServer((req, res) => {
-
-//   const bucket  = getBucket(req.headers['x-client-id'] || 'anonymous');
-//   const allowed = bucket.consume();
-//   const status  = bucket.getStatus();
-
-//   res.setHeader('Content-Type',          'application/json');
-//   res.setHeader('X-RateLimit-Limit',     status.limit);
-//   res.setHeader('X-RateLimit-Remaining', status.remaining);
-//   res.setHeader('X-RateLimit-Reset',     status.resetInMs);
-
-//   res.writeHead(allowed ? 200 : 429);
-//   res.end(JSON.stringify({
-//     status:   allowed ? 'ALLOW' : 'DENY',
-//     client:   req.headers['x-client-id'] || 'anonymous',
-//     tokens:   status.remaining,
-//     retryInMs: allowed ? null : status.resetInMs,
-//   }));
-
-// }).listen(3000, () => console.log('Rate limiter running on http://localhost:3000'));
-
 const app = express();
 app.use(express.json());
  
-// ─── Rate Limit Middleware ────────────────────────────────────────────────────
+// Rate Limit Middleware 
 const rateLimiter = (req, res, next) => {
   const clientKey = req.headers['x-client-id'] || 'anonymous';
   const bucket    = getBucket(clientKey);
@@ -90,7 +66,7 @@ const rateLimiter = (req, res, next) => {
  
 app.use(rateLimiter);
  
-// ─── Admin Endpoint — configure a client's limits ────────────────────────────
+//Admin Endpoint -configure a client's limits
 app.post('/admin/config', (req, res) => {
   const { clientKey, requestsPerSecond, burstSize } = req.body;
  
@@ -111,7 +87,7 @@ app.post('/admin/config', (req, res) => {
   });
 });
  
-// ─── Main API Endpoint ────────────────────────────────────────────────────────
+//Main API Endpoint 
 app.get('/', (req, res) => {
   const clientKey = req.headers['x-client-id'] || 'anonymous';
   const status    = getBucket(clientKey).getStatus();
@@ -124,7 +100,7 @@ app.get('/', (req, res) => {
   });
 });
  
-// ─── Start Server ─────────────────────────────────────────────────────────────
+// Start Server 
 app.listen(3000, () => {
   console.log('Rate limiter running on http://localhost:3000');
   console.log('Test: curl -H "x-client-id: user-1" http://localhost:3000');
